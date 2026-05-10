@@ -14,7 +14,6 @@ import { Route as LiveRouteImport } from './routes/live'
 import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LandingPagesIndexRouteImport } from './routes/landing-pages.index'
 import { Route as FunnelsIndexRouteImport } from './routes/funnels.index'
@@ -64,11 +63,6 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/auth.lazy').then((d) => d.Route))
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/admin.lazy').then((d) => d.Route))
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -205,7 +199,6 @@ const FunnelsIdEditRoute = FunnelsIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/leads': typeof LeadsRoute
@@ -236,7 +229,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/leads': typeof LeadsRoute
@@ -268,7 +260,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/leads': typeof LeadsRoute
@@ -301,7 +292,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/auth'
     | '/dashboard'
     | '/leads'
@@ -332,7 +322,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/auth'
     | '/dashboard'
     | '/leads'
@@ -363,7 +352,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/auth'
     | '/dashboard'
     | '/leads'
@@ -395,7 +383,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LeadsRoute: typeof LeadsRoute
@@ -448,13 +435,6 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -621,28 +601,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminKycRoute: typeof AdminKycRoute
-  AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
-  AdminSupportRoute: typeof AdminSupportRoute
-  AdminUsersRoute: typeof AdminUsersRoute
-  AdminVideosRoute: typeof AdminVideosRoute
-  AdminWhatsappRoute: typeof AdminWhatsappRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminKycRoute: AdminKycRoute,
-  AdminSettingsRoute: AdminSettingsRoute,
-  AdminSubscriptionsRoute: AdminSubscriptionsRoute,
-  AdminSupportRoute: AdminSupportRoute,
-  AdminUsersRoute: AdminUsersRoute,
-  AdminVideosRoute: AdminVideosRoute,
-  AdminWhatsappRoute: AdminWhatsappRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 interface AuthRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthUpdatePasswordRoute: typeof AuthUpdatePasswordRoute
@@ -691,7 +649,6 @@ const LandingPagesIdRouteWithChildren = LandingPagesIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LeadsRoute: LeadsRoute,
@@ -711,3 +668,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
