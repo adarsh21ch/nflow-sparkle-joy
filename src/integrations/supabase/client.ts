@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
 
 // Publishable keys — safe to ship in client bundle
 const FALLBACK_URL = "https://dnyjlmtiliqkpxwsgqyn.supabase.co";
