@@ -534,10 +534,10 @@ const PricingFullPage = () => {
       ? "md:grid-cols-2 max-w-3xl mx-auto"
       : "md:grid-cols-3 max-w-5xl mx-auto";
 
-  return (
-    <div className="min-h-screen">
-      <Navbar />
-      <div className="pt-24 pb-16">
+  const pageBody = (
+    <>
+      {!isDashboardUpgradeView && <Navbar />}
+      <div className={isDashboardUpgradeView ? "pb-16" : "pt-24 pb-16"}>
         <div className="container-app">
           <motion.div className="text-center mb-10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">
@@ -673,10 +673,11 @@ const PricingFullPage = () => {
           </div>
         </div>
       </div>
-      <Footer />
-
-    </div>
+      {!isDashboardUpgradeView && <Footer />}
+    </>
   );
+
+  return isDashboardUpgradeView ? <DashboardLayout>{pageBody}</DashboardLayout> : <div className="min-h-screen">{pageBody}</div>;
 };
 
 export default PricingFullPage;
