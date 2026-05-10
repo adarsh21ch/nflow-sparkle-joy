@@ -1,6 +1,6 @@
 import { brand } from "@/config/brand";
 import { Logo } from "./Logo";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 
 const links = {
   Product: [
