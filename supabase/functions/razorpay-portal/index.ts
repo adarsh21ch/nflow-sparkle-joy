@@ -326,10 +326,17 @@ Deno.serve(async (req) => {
 
       if (!planData) return jsonResponse({ error: "Plan not found or inactive" }, 400);
 
+      // Detect prorated plan upgrade orders (Basic → Pro for active paid users)
+      const isPlanUpgradeOrder = order.notes?.kind === "plan_upgrade_prorated";
+      const orderProratedCharge = Number(order.notes?.prorated_charge || 0);
+      const orderExpiresAt: string | null = order.notes?.expires_at || null;
+
       // Resolve tier_id from order.notes (authoritative)
       const orderTierId: string | null = (order.notes?.tier_id || "") || null;
       let tierRow: any = null;
-      let expectedAmountInr = Number(planData.price_inr);
+      let expectedAmountInr = isPlanUpgradeOrder
+        ? orderProratedCharge
+        : Number(planData.price_inr);
       if (orderTierId) {
         const { data: tr } = await serviceClient
           .from("plan_view_tiers")
@@ -338,11 +345,13 @@ Deno.serve(async (req) => {
           .maybeSingle();
         if (tr) {
           tierRow = tr;
-          expectedAmountInr = Number(tr.monthly_price);
+          if (!isPlanUpgradeOrder) {
+            expectedAmountInr = Number(tr.monthly_price);
+          }
         }
       }
 
-      // Order amount must match (plan price OR tier price)
+      // Order amount must match (plan price OR tier price OR prorated upgrade)
       const expectedPaise = Math.round(expectedAmountInr * 100);
       if (Number(order.amount) !== expectedPaise) {
         await serviceClient.from("payment_audit_logs").insert({
@@ -350,7 +359,7 @@ Deno.serve(async (req) => {
           event_type: "payment_amount_mismatch",
           razorpay_order_id,
           razorpay_payment_id,
-          payload: { expected: expectedPaise, actual: order.amount },
+          payload: { expected: expectedPaise, actual: order.amount, kind: order.notes?.kind || null },
           source: "frontend",
           idempotency_key: `amt_${razorpay_payment_id}`,
         });
@@ -369,7 +378,10 @@ Deno.serve(async (req) => {
 
       const now = new Date();
       let expiresAt: string | null = null;
-      if (planData?.duration_days) {
+      if (isPlanUpgradeOrder && orderExpiresAt) {
+        // Plan upgrade: preserve current cycle's renewal date.
+        expiresAt = orderExpiresAt;
+      } else if (planData?.duration_days) {
         expiresAt = new Date(now.getTime() + planData.duration_days * 86400000).toISOString();
       }
 
