@@ -442,8 +442,13 @@ Deno.serve(async (req) => {
       if (isPlanUpgradeOrder && orderExpiresAt) {
         // Plan upgrade: preserve current cycle's renewal date.
         expiresAt = orderExpiresAt;
-      } else if (planData?.duration_days) {
-        expiresAt = new Date(now.getTime() + planData.duration_days * 86400000).toISOString();
+      } else {
+        const subscriptionWindow = resolveCycleEnd(
+          { started_at: now.toISOString() },
+          getBillingInterval(pKey, planData?.billing_type),
+          Number(planData?.duration_days || 0),
+        );
+        expiresAt = subscriptionWindow.expiresAt.toISOString();
       }
 
       // Deactivate old subscriptions
