@@ -309,9 +309,23 @@ export const PricingSection = () => {
     highlight: boolean;
   }[] = [];
 
-  // Free plan removed from landing pricing — trial-first model.
-  const _freeFeatures = buildFreeFeatures(freeConfig);
-  void _freeFeatures;
+  // Free card — fully driven by admin plan_config row. Always shown first
+  // when its plan_config row is enabled.
+  if (freeConfig && freeConfig.is_enabled !== false) {
+    cards.push({
+      name: "Free",
+      price: "₹0",
+      period: "/forever",
+      daily: freeConfig.daily_view_limit && freeConfig.daily_view_limit > 0
+        ? `${Number(freeConfig.daily_view_limit).toLocaleString("en-IN")} views/day`
+        : "Start building free",
+      badge: freeConfig.plan_badge_text || null,
+      features: buildFreeFeatures(freeConfig),
+      cta: FREE_CTA,
+      variant: FREE_VARIANT,
+      highlight: false,
+    });
+  }
 
   // Replace the generic "X views/day total" feature line with copy that makes
   // it obvious the cap is the *starting* tier and can be upgraded in-app.
@@ -430,30 +444,8 @@ export const PricingSection = () => {
             Start Free. <span className="text-gradient-brand">Upgrade When You Get Results.</span>
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            {isTrialEnabled
-              ? `${trialDays} days free. Full access. No card needed. Keep going only when it works for you.`
-              : "Pick the plan that fits your network size."}
+            Pick the plan that fits your network size. Start free — no credit card needed.
           </p>
-        </motion.div>
-
-        {/* Guarantee strip — sits above pricing cards so users see the safety net first */}
-        <motion.div
-          className="max-w-2xl mx-auto mb-10 flex items-center gap-3 sm:gap-4 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/[0.08] via-emerald-500/[0.04] to-transparent px-4 sm:px-5 py-3.5"
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
-            <Shield className="text-emerald-500" size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground leading-tight">
-              7-Day Money-Back Guarantee
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-              Not happy within 7 days? We'll refund every rupee — no questions asked.
-            </p>
-          </div>
         </motion.div>
 
         {/* Build all card render nodes once, used by both mobile carousel and desktop grid */}
@@ -545,24 +537,16 @@ export const PricingSection = () => {
                     return <Button disabled className="w-full">Current Plan</Button>;
                   }
                   const isUpgrade = lname === "pro" && onBasic;
-                  const trialCta = isTrialEnabled ? `Start ${trialDays}-Day Free Trial` : plan.cta;
                   return (
-                    <>
-                      <Button
-                        variant={plan.variant}
-                        className="w-full gap-2"
-                        onClick={() => handlePlanClick(plan.name)}
-                        disabled={loadingPlan === `${lname}_monthly`}
-                      >
-                        {loadingPlan === `${lname}_monthly` && <Loader2 size={16} className="animate-spin" />}
-                        {isUpgrade ? <><ArrowUp size={14} /> Upgrade to Pro</> : (!user ? trialCta : plan.cta)}
-                      </Button>
-                      {isTrialEnabled && !user && (
-                        <p className="text-[11px] text-emerald-500 text-center mt-2">
-                          Includes {trialDays}-day free trial
-                        </p>
-                      )}
-                    </>
+                    <Button
+                      variant={plan.variant}
+                      className="w-full gap-2"
+                      onClick={() => handlePlanClick(plan.name)}
+                      disabled={loadingPlan === `${lname}_monthly`}
+                    >
+                      {loadingPlan === `${lname}_monthly` && <Loader2 size={16} className="animate-spin" />}
+                      {isUpgrade ? <><ArrowUp size={14} /> Upgrade to Pro</> : plan.cta}
+                    </Button>
                   );
                 })()}
               </motion.div>
