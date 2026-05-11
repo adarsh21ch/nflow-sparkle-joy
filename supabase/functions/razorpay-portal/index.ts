@@ -351,10 +351,11 @@ Deno.serve(async (req) => {
 
       if (!planData) return jsonResponse({ error: "Plan not found or inactive" }, 400);
 
-      // Detect prorated plan upgrade orders (Basic → Pro for active paid users)
+      // Detect prorated plan upgrade orders (e.g. Basic → Pro for active paid users)
       const isPlanUpgradeOrder = order.notes?.kind === "plan_upgrade_prorated";
       const orderProratedCharge = Number(order.notes?.prorated_charge || 0);
       const orderExpiresAt: string | null = order.notes?.expires_at || null;
+      const orderTargetInterval = getBillingInterval(order.notes?.to_plan || pKey, order.notes?.target_interval || planData?.billing_type);
 
       // Resolve tier_id from order.notes (authoritative)
       const orderTierId: string | null = (order.notes?.tier_id || "") || null;
@@ -365,13 +366,13 @@ Deno.serve(async (req) => {
       if (orderTierId) {
         const { data: tr } = await serviceClient
           .from("plan_view_tiers")
-          .select("id, plan_name, daily_views, monthly_price")
+          .select("id, plan_name, daily_views, monthly_price, yearly_price")
           .eq("id", orderTierId)
           .maybeSingle();
         if (tr) {
           tierRow = tr;
           if (!isPlanUpgradeOrder) {
-            expectedAmountInr = Number(tr.monthly_price);
+            expectedAmountInr = pickTierPrice(tr, orderTargetInterval);
           }
         }
       }
