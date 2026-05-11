@@ -34,7 +34,23 @@ const PublicVideoPage = () => {
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) {
+  // Creator identity for the YouTube-style strip beneath the player.
+  const { data: creator } = useQuery({
+    queryKey: ["public-video-creator", video?.owner_id],
+    queryFn: async () => {
+      if (!video?.owner_id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url, city, kyc_status")
+        .eq("id", video.owner_id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!video?.owner_id,
+    staleTime: 10 * 60 * 1000,
+  });
+
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
