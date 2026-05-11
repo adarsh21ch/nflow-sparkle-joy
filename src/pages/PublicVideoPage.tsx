@@ -3,7 +3,7 @@ import { useParams } from "@/lib/router-compat";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/landing/Logo";
-import { Video, AlertTriangle } from "lucide-react";
+import { Video, AlertTriangle, BadgeCheck, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { VideoUploadModal } from "@/components/VideoUploadModal";
@@ -32,6 +32,22 @@ const PublicVideoPage = () => {
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
+  });
+
+  // Creator identity for the YouTube-style strip beneath the player.
+  const { data: creator } = useQuery({
+    queryKey: ["public-video-creator", video?.owner_id],
+    queryFn: async () => {
+      if (!video?.owner_id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url, city, kyc_status")
+        .eq("id", video.owner_id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!video?.owner_id,
+    staleTime: 10 * 60 * 1000,
   });
 
   if (isLoading) {
@@ -109,6 +125,31 @@ const PublicVideoPage = () => {
         </div>
 
         <h1 className="text-2xl font-heading font-bold mb-2">{video.title}</h1>
+
+        {/* Creator strip — YouTube-style */}
+        {creator && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary">
+              {creator.avatar_url ? (
+                <img src={creator.avatar_url} alt={creator.full_name || "Creator"} className="h-full w-full object-cover" />
+              ) : (
+                <UserIcon size={18} />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="truncate text-sm font-heading font-semibold">{creator.full_name || "Creator"}</p>
+                {creator.kyc_status === "verified" && (
+                  <span title="Verified creator" className="inline-flex items-center text-primary">
+                    <BadgeCheck size={15} />
+                  </span>
+                )}
+              </div>
+              {creator.city && <p className="truncate text-xs text-muted-foreground">{creator.city}</p>}
+            </div>
+          </div>
+        )}
+
         {video.description && <p className="text-sm text-muted-foreground mb-4">{video.description}</p>}
         {video.duration_seconds && (
           <p className="text-xs text-muted-foreground">

@@ -1,10 +1,12 @@
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Navigate, Link, useNavigate } from "@/lib/router-compat";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { MonthlyViewsBanner } from "@/components/MonthlyViewsBanner";
 import { DashboardKpiStrip } from "@/components/dashboard/DashboardKpiStrip";
 import { DashboardContentRow } from "@/components/dashboard/DashboardContentRow";
+import { LatestVideoShareCard } from "@/components/dashboard/LatestVideoShareCard";
+import { useHasVideos } from "@/hooks/useHasVideos";
 import { Layers, Users, Eye, IndianRupee, TrendingUp, BarChart3, Calendar, Plus, ArrowRight, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +41,13 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const monthly = useMonthlyViews();
   const daily = useDailyViews();
+  const { hasVideos, latestVideo, isLoading: videosLoading } = useHasVideos();
+
+  // Upload-first onboarding: brand-new users with zero videos go straight to upload.
+  if (user && !videosLoading && !hasVideos) {
+    return <Navigate to="/onboarding-upload" />;
+  }
+
 
   const { data: funnels = [] } = useQuery({
     queryKey: ["my-funnels", user?.id],
@@ -127,6 +136,9 @@ const Dashboard = () => {
             <Link to="/videos"><Button variant="outline" size="sm"><Eye size={14} /> Add Video</Button></Link>
           </div>
         </div>
+
+        {/* Latest video — share-first spotlight */}
+        {latestVideo && <LatestVideoShareCard video={latestVideo} />}
 
         {/* Plan + view limits strip */}
         <DashboardKpiStrip />
