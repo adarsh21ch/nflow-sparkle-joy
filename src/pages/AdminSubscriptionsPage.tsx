@@ -313,10 +313,14 @@ const AdminSubscriptionsPage = () => {
   const getSettingValue = (key: string) => settings.find(s => s.key === key)?.value || "";
 
   const PLAN_META: Record<string, { label: string; badge: string; desc: string }> = {
+    free: { label: "Free", badge: "bg-muted text-muted-foreground", desc: "Forever free · entry tier" },
     basic: { label: "Basic", badge: "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400", desc: "For Individuals" },
     pro: { label: "Pro", badge: "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400", desc: "For Team Leaders" },
     enterprise: { label: "Enterprise", badge: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400", desc: "For Large Networks" },
   };
+
+  const freeConfig = planConfigs.find(c => c.plan_name === "free") as any;
+  const [planFilter, setPlanFilter] = useState<"all" | "free" | "basic" | "pro">("all");
 
   const renderPlanCard = (planName: string, config: any) => {
     const meta = PLAN_META[planName];
@@ -542,12 +546,28 @@ const AdminSubscriptionsPage = () => {
           </TabsContent>
 
           <TabsContent value="plans" className="space-y-3 pt-1">
-            <p className="text-xs text-muted-foreground">
-              Edit any field — changes save automatically. Free plan is hidden from this view; existing free users keep their access.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {renderPlanCard("basic", basicConfig)}
-              {renderPlanCard("pro", proConfig)}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                Edit any field — changes save automatically. Choose a plan below to focus, or view all side-by-side.
+              </p>
+              <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5 text-xs">
+                {(["all", "free", "basic", "pro"] as const).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setPlanFilter(k)}
+                    className={`px-3 py-1 rounded-md transition-colors capitalize ${
+                      planFilter === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {k === "all" ? "All Plans" : k}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={`grid gap-3 ${planFilter === "all" ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"}`}>
+              {(planFilter === "all" || planFilter === "free") && renderPlanCard("free", freeConfig)}
+              {(planFilter === "all" || planFilter === "basic") && renderPlanCard("basic", basicConfig)}
+              {(planFilter === "all" || planFilter === "pro") && renderPlanCard("pro", proConfig)}
             </div>
             <p className="text-[11px] text-muted-foreground italic mt-2">
               Enterprise plan is managed separately in the Enterprise tab.
