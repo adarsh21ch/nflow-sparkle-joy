@@ -95,6 +95,7 @@ const PublicVideoPage = () => {
             <video
               src={video.public_url}
               controls
+              controlsList={`${video.allow_seek === false ? "nodownload noplaybackrate " : ""}${video.allow_playback_speed === false ? "noplaybackrate" : ""}`.trim() || undefined}
               autoPlay
               muted
               preload="auto"
@@ -104,7 +105,14 @@ const PublicVideoPage = () => {
               onError={() => setVideoError(true)}
               ref={(el) => {
                 if (!el) return;
-                // Try to play with sound first; fall back to muted autoplay if blocked
+                const allowSeek = video.allow_seek !== false;
+                const allowSpeed = video.allow_playback_speed !== false;
+                const maxRef = { v: 0 };
+                el.ontimeupdate = () => { if (el.currentTime > maxRef.v) maxRef.v = el.currentTime; };
+                el.onseeking = () => {
+                  if (!allowSeek && el.currentTime > maxRef.v + 0.5) el.currentTime = maxRef.v;
+                };
+                el.onratechange = () => { if (!allowSpeed && el.playbackRate !== 1) el.playbackRate = 1; };
                 const tryUnmuted = async () => {
                   try {
                     el.muted = false;
