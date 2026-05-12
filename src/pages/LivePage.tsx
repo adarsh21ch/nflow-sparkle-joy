@@ -617,6 +617,26 @@ const LivePage = () => {
                           <button onClick={() => navigate("/funnels")} className="text-primary underline">Create one</button>.
                         </p>
                       )}
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => setVideoPickerOpen(true)}>
+                          <Video size={14} /> Pick from your video library
+                        </Button>
+                        <p className="text-[11px] text-muted-foreground mt-1.5">We'll auto-select the funnel that uses that video.</p>
+                      </div>
+                      <VideoPickerModal
+                        open={videoPickerOpen}
+                        onClose={() => setVideoPickerOpen(false)}
+                        onSelect={(videoId, title) => {
+                          const match = (funnels as any[]).find((f) => f.video_asset_id === videoId);
+                          if (match) {
+                            upd("funnel_id", match.id);
+                            toast.success(`Selected funnel "${match.title}" containing "${title}"`);
+                          } else {
+                            toast.error(`No funnel uses "${title}" yet. Create a funnel with this video first.`);
+                          }
+                          setVideoPickerOpen(false);
+                        }}
+                      />
                     </div>
                   ) : (
                     <div className="grid sm:grid-cols-2 gap-3">
