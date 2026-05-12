@@ -270,16 +270,19 @@ const AdminSubscriptionsPage = () => {
 
   const saveField = useCallback(async (planName: string, field: string, value: any) => {
     const updateObj: Record<string, any> = { [field]: value, updated_at: new Date().toISOString() };
-    const { error } = await supabase
-      .from("plan_config")
-      .update(updateObj as any)
-      .eq("plan_name", planName);
+    const { error } = await adminWrite(() =>
+      (supabase.from("plan_config") as any)
+        .update(updateObj)
+        .eq("plan_name", planName)
+        .select(),
+    );
     if (error) {
-      toast.error("Failed to save");
+      toast.error(error.message || "Failed to save");
     } else {
       toast.success("Updated!");
       queryClient.invalidateQueries({ queryKey: ["admin-plan-configs"] });
       queryClient.invalidateQueries({ queryKey: ["plan-configs"] });
+      queryClient.invalidateQueries({ queryKey: ["plan-pricing"] });
     }
   }, [queryClient]);
 
